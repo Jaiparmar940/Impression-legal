@@ -1,0 +1,112 @@
+# Privacy Policy
+
+**Effective Date: 07/14/2025**
+
+Welcome to Impression! This Privacy Policy explains how we collect, use, and protect your information when you use our mobile app and related services ("Service"). By using Impression, you agree to this policy. If you don't agree, you may not use the app (sad face 😢). We may update this policy occasionally, and continued use after changes means you accept the updates.
+
+## 1. Information We Collect
+
+When you use Impression—whether uploading a profile, rating others, or just browsing—we collect certain personal and technical data to provide, improve, and secure the app.
+
+### Information You Provide:
+- First name (if provided)
+- Email address (if signing in via email)
+- Age, birth year, or birthday (if provided)
+- Gender and target gender (if specified)
+- Photos you upload as part of your dating profile
+- Answers to profile prompts, bios, or other text content
+- Feedback, ratings, and tags you give to other profiles
+
+If you sign up using a third-party service (e.g. Google), we may receive information such as your name, email, or profile image—subject to your permission during login.
+
+### Automatically Collected:
+- Firebase UID or anonymous ID
+- Device info (OS version, screen size)
+- Usage patterns (e.g., reviews submitted, tokens earned/spent)
+- Crash and performance logs (via Firebase or Sentry)
+- Analytics and interaction flow (via Firebase Analytics or similar tools)
+
+### Cookies & Local Storage:
+If you use a web version in the future, we may use session cookies and local storage to manage logins, remember settings, and measure app performance.
+
+## 2. How We Use Your Information
+
+We use your information to:
+- Let you create, edit, and share your dating profile for feedback
+- Match your profile with the appropriate audience for reviews
+- Deliver and manage token-based actions (earn/spend)
+- Improve app functionality, design, and AI scoring accuracy
+- Communicate with you about important updates, feedback results, or support
+- Maintain community safety and enforce fair usage
+
+If you opt into notifications or emails, we may send tips, feature announcements, or feedback summaries. You can opt out any time.
+
+## 3. AI Training & Data Analysis
+
+To improve our insights and scoring models, we may use aggregated, anonymized versions of:
+- Uploaded photos
+- Prompt responses
+- Feedback tags and scores
+
+This data may help train machine learning models to better understand which profile elements lead to higher ratings or better performance.
+
+🔒 **No personal identifiers, account names, or full user profiles are used in training.**  
+💰 **We never sell your profile data.**  
+✅ **You can opt out of your anonymized data being used in AI training by emailing us at [impressiondating@gmail.com].**
+
+## 4. How You Can Control Your Data
+
+You may:
+- Delete your profile from within the app
+- Request deletion of your full account and data by emailing [impressiondating@gmail.com]
+- Request access to a copy of your stored data
+- Opt out of emails, notifications, or analytics
+
+We retain profile data only as long as your account is active or needed to deliver the Service.
+
+## 5. How We Share Your Information
+
+We don't sell your information.
+
+We may share data:
+- With Firebase and similar service providers to operate the app
+- With analytics providers (like Amplitude or Sentry) to improve app performance
+- As part of a business merger or acquisition (data would transfer with the company, but remain protected under this policy)
+- If legally required (e.g. court order, fraud investigation)
+
+Only anonymized or limited data is used for research or development outside of direct user features.
+
+## 6. How We Protect Your Information
+
+We take strong measures to secure your data, including:
+- Secure Firebase Authentication and Storage
+- Restrictive Firebase rules to ensure data access only by owners
+- HTTPS encryption for all data in transit
+- Best practices for storage, authentication, and access control
+
+We do not store payment info directly. All payments are handled via third-party platforms (e.g., Google Play, Apple).
+
+## 7. Children's Privacy
+
+Impression is strictly for users aged 18 and older. If we discover that someone under 18 has used the app, their account and data will be deleted promptly.
+
+## 8. International Users and Compliance
+
+We comply with major international privacy regulations including:
+- GDPR (Europe)
+- CCPA/CPRA (California)
+- PIPEDA (Canada)
+- UK-GDPR
+
+If you're in one of these regions, you may have additional rights including access, correction, or deletion of your data.
+
+## 9. Changes to This Policy
+
+We may update this policy as our services evolve. You'll be notified of significant changes via the app or email.
+
+## 10. Contact Us
+
+If you have any questions, concerns, or data requests, please reach out:
+
+- 📧 Email: impressiondating@gmail.com
+- 🏢 Company: Impression Dating 
