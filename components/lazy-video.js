@@ -1,215 +1,5 @@
-class LazyVideo {
-  constructor(element, options = {}) {
-    this.element = element;
-    this.options = {
-      mp4Src: '',
-      webmSrc: '',
-      posterSrc: '',
-      alt: '',
-      autoplay: true,
-      loop: true,
-      muted: true,
-      playsInline: true,
-      ...options
-    };
-    
-    this.isLoaded = false;
-    this.isInView = false;
-    this.hasError = false;
-    this.videoElement = null;
-    
-    this.init();
-  }
-  
-  init() {
-    this.setupIntersectionObserver();
-    this.renderPoster();
-  }
-  
-  setupIntersectionObserver() {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            this.isInView = true;
-            this.loadVideo();
-            observer.disconnect();
-          }
-        });
-      },
-      {
-        rootMargin: '50px',
-        threshold: 0.1,
-      }
-    );
-    
-    observer.observe(this.element);
-  }
-  
-  renderPoster() {
-    this.element.innerHTML = `
-      <div class="w-full h-full relative">
-        <img 
-          src="${this.options.posterSrc}" 
-          alt="${this.options.alt}" 
-          class="w-full h-full object-cover"
-          loading="lazy"
-        />
-      </div>
-    `;
-  }
-  
-  loadVideo() {
-    // Create loading placeholder and video
-    this.element.innerHTML = `
-      <div class="w-full h-full relative">
-        <div id="loading-overlay" class="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center z-10">
-          <div class="text-gray-400 text-sm">Loading...</div>
-        </div>
-        <video 
-          class="w-full h-full object-cover"
-          poster="${this.options.posterSrc}"
-          autoplay="${this.options.autoplay}"
-          loop="${this.options.loop}"
-          muted="${this.options.muted}"
-          playsinline="${this.options.playsInline}"
-          webkit-playsinline="true"
-          x5-playsinline="true"
-          x5-video-player-type="h5"
-          x5-video-player-fullscreen="false"
-          preload="metadata"
-          controls="false"
-        >
-          <source src="${this.options.webmSrc}" type="video/webm">
-          <source src="${this.options.mp4Src}" type="video/mp4">
-          <img src="${this.options.posterSrc}" alt="${this.options.alt}" class="w-full h-full object-cover">
-        </video>
-      </div>
-    `;
-    
-    this.videoElement = this.element.querySelector('video');
-    const loadingOverlay = this.element.querySelector('#loading-overlay');
-    
-    if (this.videoElement) {
-      this.setupVideoEvents(loadingOverlay);
-    }
-  }
-  
-  setupVideoEvents(loadingOverlay) {
-    // Remove loading overlay when video starts loading
-    this.videoElement.addEventListener('loadstart', () => {
-      if (loadingOverlay) {
-        loadingOverlay.style.opacity = '0';
-        setTimeout(() => {
-          if (loadingOverlay.parentNode) {
-            loadingOverlay.remove();
-          }
-        }, 300);
-      }
-    });
-    
-    this.videoElement.addEventListener('loadeddata', () => {
-      this.isLoaded = true;
-      this.attemptMobilePlay();
-    });
-    
-    this.videoElement.addEventListener('canplay', () => {
-      this.attemptMobilePlay();
-    });
-    
-    this.videoElement.addEventListener('error', (e) => {
-      console.error('Video error:', e);
-      this.hasError = true;
-      this.renderPoster();
-    });
-    
-    // Multiple mobile play attempts
-    this.setupMobilePlayHandlers();
-  }
-  
-  setupMobilePlayHandlers() {
-    if (!this.isMobile()) return;
-    
-    // Touch to play
-    this.videoElement.addEventListener('touchstart', () => {
-      this.attemptMobilePlay();
-    });
-    
-    // Click to play
-    this.videoElement.addEventListener('click', () => {
-      this.attemptMobilePlay();
-    });
-    
-    // Visibility change play
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && this.isInView) {
-        setTimeout(() => this.attemptMobilePlay(), 100);
-      }
-    });
-    
-    // User interaction detection
-    let hasUserInteracted = false;
-    const userInteractionEvents = ['touchstart', 'mousedown', 'keydown', 'scroll'];
-    
-    userInteractionEvents.forEach(event => {
-      document.addEventListener(event, () => {
-        hasUserInteracted = true;
-        if (this.isInView && this.isLoaded) {
-          setTimeout(() => this.attemptMobilePlay(), 100);
-        }
-      }, { once: true });
-    });
-  }
-  
-  attemptMobilePlay() {
-    if (!this.videoElement || !this.isMobile()) return;
-    
-    const playPromise = this.videoElement.play();
-    
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          console.log('Mobile video playing successfully');
-        })
-        .catch(error => {
-          console.log('Mobile autoplay failed:', error.message);
-          // Add play button overlay for mobile
-          this.addPlayButton();
-        });
-    }
-  }
-  
-  addPlayButton() {
-    if (this.element.querySelector('.mobile-play-button')) return;
-    
-    const playButton = document.createElement('div');
-    playButton.className = 'mobile-play-button absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 cursor-pointer z-20';
-    playButton.innerHTML = `
-      <div class="bg-white rounded-full p-3">
-        <svg class="w-6 h-6 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
-        </svg>
-      </div>
-    `;
-    
-    playButton.addEventListener('click', () => {
-      this.videoElement.play().then(() => {
-        playButton.remove();
-      }).catch(e => {
-        console.log('Manual play failed:', e);
-      });
-    });
-    
-    this.element.appendChild(playButton);
-  }
-  
-  isMobile() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-  }
-}
-
-// Simple Mobile Carousel - No wrapping, just CSS transforms
-class SimpleMobileCarousel {
+// Video Carousel with Lazy Loading
+class VideoCarousel {
   constructor(container) {
     this.container = container;
     this.currentSlide = 0;
@@ -217,17 +7,20 @@ class SimpleMobileCarousel {
     this.isDragging = false;
     this.startX = 0;
     this.currentX = 0;
+    this.videoData = [
+      { id: 'demo1', mp4: 'assets/animations/videos/demo1.mp4', webm: 'assets/animations/videos/demo1.webm', poster: 'assets/animations/posters/demo1-poster.jpg' },
+      { id: 'demo2', mp4: 'assets/animations/videos/demo2.mp4', webm: 'assets/animations/videos/demo2.webm', poster: 'assets/animations/posters/demo2-poster.jpg' },
+      { id: 'demo3', mp4: 'assets/animations/videos/demo3.mp4', webm: 'assets/animations/videos/demo3.webm', poster: 'assets/animations/posters/demo3-poster.jpg' }
+    ];
     
     this.init();
   }
   
   init() {
-    // Only initialize on mobile devices
-    if (window.innerWidth >= 768) return;
-    
     this.setupCarousel();
     this.setupTouchEvents();
     this.updateIndicators();
+    this.loadCurrentSlide();
   }
   
   setupCarousel() {
@@ -320,6 +113,9 @@ class SimpleMobileCarousel {
   }
   
   goToSlide(index) {
+    // Pause current slide video
+    this.pauseCurrentSlide();
+    
     this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
     
     // Hide all slides
@@ -332,17 +128,139 @@ class SimpleMobileCarousel {
     this.slides[this.currentSlide].style.display = 'block';
     
     this.updateIndicators();
+    this.loadCurrentSlide();
+  }
+  
+  pauseCurrentSlide() {
+    const currentSlide = this.slides[this.currentSlide];
+    const video = currentSlide.querySelector('video');
+    if (video) {
+      video.pause();
+    }
+  }
+  
+  loadCurrentSlide() {
+    const currentSlide = this.slides[this.currentSlide];
+    const videoContainer = currentSlide.querySelector('[data-lazy-video]');
     
-    // Try to play video in current slide
-    setTimeout(() => {
-      const currentSlide = this.slides[this.currentSlide];
-      const video = currentSlide.querySelector('video');
-      if (video && video.readyState >= 2) {
-        video.play().catch(e => {
-          console.log('Auto-play failed on slide change');
+    if (!videoContainer) return;
+    
+    // Get video data for current slide
+    const videoData = this.videoData[this.currentSlide];
+    
+    // Create video element if it doesn't exist
+    let video = videoContainer.querySelector('video');
+    if (!video) {
+      video = document.createElement('video');
+      video.className = 'w-full h-full object-cover';
+      video.setAttribute('muted', 'true');
+      video.setAttribute('loop', 'true');
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('x5-playsinline', 'true');
+      video.setAttribute('x5-video-player-type', 'h5');
+      video.setAttribute('x5-video-player-fullscreen', 'false');
+      video.setAttribute('preload', 'metadata');
+      video.setAttribute('controls', 'false');
+      video.setAttribute('poster', videoData.poster);
+      
+      // Add sources
+      const webmSource = document.createElement('source');
+      webmSource.src = videoData.webm;
+      webmSource.type = 'video/webm';
+      video.appendChild(webmSource);
+      
+      const mp4Source = document.createElement('source');
+      mp4Source.src = videoData.mp4;
+      mp4Source.type = 'video/mp4';
+      video.appendChild(mp4Source);
+      
+      // Add fallback image
+      const fallbackImg = document.createElement('img');
+      fallbackImg.src = videoData.poster;
+      fallbackImg.alt = 'Video poster';
+      fallbackImg.className = 'w-full h-full object-cover';
+      video.appendChild(fallbackImg);
+      
+      // Add video to container
+      videoContainer.innerHTML = '';
+      videoContainer.appendChild(video);
+      
+      // Setup video events
+      this.setupVideoEvents(video);
+    }
+    
+    // Load and play video
+    video.load();
+    this.attemptPlay(video);
+  }
+  
+  setupVideoEvents(video) {
+    video.addEventListener('loadeddata', () => {
+      console.log('Video loaded successfully');
+    });
+    
+    video.addEventListener('canplay', () => {
+      this.attemptPlay(video);
+    });
+    
+    video.addEventListener('error', (e) => {
+      console.error('Video error:', e);
+    });
+    
+    // Mobile-specific play attempts
+    if (this.isMobile()) {
+      video.addEventListener('touchstart', () => {
+        this.attemptPlay(video);
+      });
+      
+      video.addEventListener('click', () => {
+        this.attemptPlay(video);
+      });
+    }
+  }
+  
+  attemptPlay(video) {
+    const playPromise = video.play();
+    
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log('Video playing successfully');
+        })
+        .catch(error => {
+          console.log('Autoplay failed:', error.message);
+          // Add play button for mobile if autoplay fails
+          if (this.isMobile()) {
+            this.addPlayButton(video);
+          }
         });
-      }
-    }, 300);
+    }
+  }
+  
+  addPlayButton(video) {
+    const container = video.parentElement;
+    if (container.querySelector('.mobile-play-button')) return;
+    
+    const playButton = document.createElement('div');
+    playButton.className = 'mobile-play-button absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 cursor-pointer z-20';
+    playButton.innerHTML = `
+      <div class="bg-white rounded-full p-3">
+        <svg class="w-6 h-6 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    `;
+    
+    playButton.addEventListener('click', () => {
+      video.play().then(() => {
+        playButton.remove();
+      }).catch(e => {
+        console.log('Manual play failed:', e);
+      });
+    });
+    
+    container.appendChild(playButton);
   }
   
   updateIndicators() {
@@ -360,39 +278,16 @@ class SimpleMobileCarousel {
       }
     });
   }
+  
+  isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+  }
 }
 
-// Auto-initialize lazy videos when DOM is loaded
+// Auto-initialize carousel when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  const lazyVideoElements = document.querySelectorAll('[data-lazy-video]');
-  
-  lazyVideoElements.forEach(element => {
-    const mp4Src = element.getAttribute('data-mp4-src');
-    const webmSrc = element.getAttribute('data-webm-src');
-    const posterSrc = element.getAttribute('data-poster-src');
-    const alt = element.getAttribute('data-alt');
-    const autoplay = element.getAttribute('data-autoplay') !== 'false';
-    const loop = element.getAttribute('data-loop') !== 'false';
-    const muted = element.getAttribute('data-muted') !== 'false';
-    const playsInline = element.getAttribute('data-plays-inline') !== 'false';
-    
-    new LazyVideo(element, {
-      mp4Src,
-      webmSrc,
-      posterSrc,
-      alt,
-      autoplay,
-      loop,
-      muted,
-      playsInline
-    });
-  });
-  
-  // Initialize simple mobile carousel after videos are initialized
-  setTimeout(() => {
-    const videoSection = document.querySelector('#video-carousel');
-    if (videoSection) {
-      new SimpleMobileCarousel(videoSection);
-    }
-  }, 200);
+  const videoSection = document.querySelector('#video-carousel');
+  if (videoSection) {
+    new VideoCarousel(videoSection);
+  }
 }); 
