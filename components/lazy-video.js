@@ -16,6 +16,7 @@ class LazyVideo {
     this.isLoaded = false;
     this.isInView = false;
     this.hasError = false;
+    this.videoElement = null;
     
     this.init();
   }
@@ -77,6 +78,7 @@ class LazyVideo {
           x5-video-player-type="h5"
           x5-video-player-fullscreen="false"
           preload="metadata"
+          controls="false"
         >
           <source src="${this.options.webmSrc}" type="video/webm">
           <source src="${this.options.mp4Src}" type="video/mp4">
@@ -85,46 +87,120 @@ class LazyVideo {
       </div>
     `;
     
-    const video = this.element.querySelector('video');
+    this.videoElement = this.element.querySelector('video');
     const loadingOverlay = this.element.querySelector('#loading-overlay');
     
-    if (video) {
-      // Remove loading overlay when video starts loading
-      video.addEventListener('loadstart', () => {
-        if (loadingOverlay) {
-          loadingOverlay.style.opacity = '0';
-          setTimeout(() => {
-            if (loadingOverlay.parentNode) {
-              loadingOverlay.remove();
-            }
-          }, 300);
-        }
-      });
-      
-      video.addEventListener('loadeddata', () => {
-        this.isLoaded = true;
-        // Force play on mobile after data is loaded
-        if (this.isMobile()) {
-          video.play().catch(e => {
-            console.log('Mobile autoplay failed, will play on user interaction');
-          });
-        }
-      });
-      
-      video.addEventListener('error', () => {
-        this.hasError = true;
-        this.renderPoster();
-      });
-      
-      // Handle mobile touch to play
-      if (this.isMobile()) {
-        video.addEventListener('touchstart', () => {
-          video.play().catch(e => {
-            console.log('Touch play failed');
-          });
-        });
-      }
+    if (this.videoElement) {
+      this.setupVideoEvents(loadingOverlay);
     }
+  }
+  
+  setupVideoEvents(loadingOverlay) {
+    // Remove loading overlay when video starts loading
+    this.videoElement.addEventListener('loadstart', () => {
+      if (loadingOverlay) {
+        loadingOverlay.style.opacity = '0';
+        setTimeout(() => {
+          if (loadingOverlay.parentNode) {
+            loadingOverlay.remove();
+          }
+        }, 300);
+      }
+    });
+    
+    this.videoElement.addEventListener('loadeddata', () => {
+      this.isLoaded = true;
+      this.attemptMobilePlay();
+    });
+    
+    this.videoElement.addEventListener('canplay', () => {
+      this.attemptMobilePlay();
+    });
+    
+    this.videoElement.addEventListener('error', (e) => {
+      console.error('Video error:', e);
+      this.hasError = true;
+      this.renderPoster();
+    });
+    
+    // Multiple mobile play attempts
+    this.setupMobilePlayHandlers();
+  }
+  
+  setupMobilePlayHandlers() {
+    if (!this.isMobile()) return;
+    
+    // Touch to play
+    this.videoElement.addEventListener('touchstart', () => {
+      this.attemptMobilePlay();
+    });
+    
+    // Click to play
+    this.videoElement.addEventListener('click', () => {
+      this.attemptMobilePlay();
+    });
+    
+    // Visibility change play
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && this.isInView) {
+        setTimeout(() => this.attemptMobilePlay(), 100);
+      }
+    });
+    
+    // User interaction detection
+    let hasUserInteracted = false;
+    const userInteractionEvents = ['touchstart', 'mousedown', 'keydown', 'scroll'];
+    
+    userInteractionEvents.forEach(event => {
+      document.addEventListener(event, () => {
+        hasUserInteracted = true;
+        if (this.isInView && this.isLoaded) {
+          setTimeout(() => this.attemptMobilePlay(), 100);
+        }
+      }, { once: true });
+    });
+  }
+  
+  attemptMobilePlay() {
+    if (!this.videoElement || !this.isMobile()) return;
+    
+    const playPromise = this.videoElement.play();
+    
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          console.log('Mobile video playing successfully');
+        })
+        .catch(error => {
+          console.log('Mobile autoplay failed:', error.message);
+          // Add play button overlay for mobile
+          this.addPlayButton();
+        });
+    }
+  }
+  
+  addPlayButton() {
+    if (this.element.querySelector('.mobile-play-button')) return;
+    
+    const playButton = document.createElement('div');
+    playButton.className = 'mobile-play-button absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 cursor-pointer z-20';
+    playButton.innerHTML = `
+      <div class="bg-white rounded-full p-3">
+        <svg class="w-6 h-6 text-gray-800" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    `;
+    
+    playButton.addEventListener('click', () => {
+      this.videoElement.play().then(() => {
+        playButton.remove();
+      }).catch(e => {
+        console.log('Manual play failed:', e);
+      });
+    });
+    
+    this.element.appendChild(playButton);
   }
   
   isMobile() {
@@ -132,8 +208,8 @@ class LazyVideo {
   }
 }
 
-// Mobile Swipe Carousel for Videos
-class MobileVideoCarousel {
+// Simple Mobile Carousel - No wrapping, just CSS transforms
+class SimpleMobileCarousel {
   constructor(container) {
     this.container = container;
     this.currentSlide = 0;
@@ -155,32 +231,38 @@ class MobileVideoCarousel {
   }
   
   setupCarousel() {
-    // Add carousel wrapper
-    this.container.innerHTML = `
-      <div class="relative overflow-hidden w-full">
-        <div class="flex transition-transform duration-300 ease-out w-full" id="carousel-slides">
-          ${this.container.innerHTML}
-        </div>
-        <div class="flex justify-center mt-4 space-x-2" id="carousel-indicators">
-          <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="0"></button>
-          <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="1"></button>
-          <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="2"></button>
-        </div>
-      </div>
+    // Get the video cards
+    this.slides = this.container.querySelectorAll('div[class*="bg-white"]');
+    
+    // Add indicators after the container
+    const indicators = document.createElement('div');
+    indicators.className = 'flex justify-center mt-4 space-x-2';
+    indicators.innerHTML = `
+      <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="0"></button>
+      <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="1"></button>
+      <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="2"></button>
     `;
     
-    // Get slides and make them full width
-    this.slides = this.container.querySelectorAll('#carousel-slides > div');
-    this.slides.forEach(slide => {
+    this.container.parentNode.insertBefore(indicators, this.container.nextSibling);
+    
+    // Make container overflow hidden
+    this.container.style.overflow = 'hidden';
+    
+    // Make slides full width and hide non-active ones
+    this.slides.forEach((slide, index) => {
       slide.style.minWidth = '100%';
       slide.style.width = '100%';
       slide.style.flexShrink = '0';
       slide.style.flexGrow = '0';
+      
+      if (index !== 0) {
+        slide.style.display = 'none';
+      }
     });
     
     // Add indicator click handlers
-    const indicators = this.container.querySelectorAll('#carousel-indicators button');
-    indicators.forEach((indicator, index) => {
+    const indicatorButtons = indicators.querySelectorAll('button');
+    indicatorButtons.forEach((indicator, index) => {
       indicator.addEventListener('click', () => {
         this.goToSlide(index);
       });
@@ -188,30 +270,40 @@ class MobileVideoCarousel {
   }
   
   setupTouchEvents() {
-    const slidesContainer = this.container.querySelector('#carousel-slides');
-    
-    slidesContainer.addEventListener('touchstart', (e) => {
+    this.container.addEventListener('touchstart', (e) => {
       this.isDragging = true;
       this.startX = e.touches[0].clientX;
       this.currentX = this.startX;
     });
     
-    slidesContainer.addEventListener('touchmove', (e) => {
+    this.container.addEventListener('touchmove', (e) => {
       if (!this.isDragging) return;
       
       this.currentX = e.touches[0].clientX;
       const diff = this.currentX - this.startX;
-      const translateX = -this.currentSlide * 100 + (diff / slidesContainer.offsetWidth) * 100;
       
-      slidesContainer.style.transform = `translateX(${translateX}%)`;
+      // Visual feedback during drag
+      if (Math.abs(diff) > 10) {
+        const currentSlide = this.slides[this.currentSlide];
+        const nextSlide = this.slides[this.currentSlide + 1];
+        const prevSlide = this.slides[this.currentSlide - 1];
+        
+        if (diff > 0 && prevSlide) {
+          prevSlide.style.display = 'block';
+          prevSlide.style.transform = `translateX(${diff}px)`;
+        } else if (diff < 0 && nextSlide) {
+          nextSlide.style.display = 'block';
+          nextSlide.style.transform = `translateX(${diff}px)`;
+        }
+      }
     });
     
-    slidesContainer.addEventListener('touchend', () => {
+    this.container.addEventListener('touchend', () => {
       if (!this.isDragging) return;
       
       this.isDragging = false;
       const diff = this.currentX - this.startX;
-      const threshold = slidesContainer.offsetWidth * 0.3;
+      const threshold = 50;
       
       if (Math.abs(diff) > threshold) {
         if (diff > 0 && this.currentSlide > 0) {
@@ -229,23 +321,36 @@ class MobileVideoCarousel {
   
   goToSlide(index) {
     this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
-    const slidesContainer = this.container.querySelector('#carousel-slides');
-    slidesContainer.style.transform = `translateX(-${this.currentSlide * 100}%)`;
+    
+    // Hide all slides
+    this.slides.forEach(slide => {
+      slide.style.display = 'none';
+      slide.style.transform = '';
+    });
+    
+    // Show current slide
+    this.slides[this.currentSlide].style.display = 'block';
+    
     this.updateIndicators();
     
     // Try to play video in current slide
-    const currentSlide = this.slides[this.currentSlide];
-    const video = currentSlide.querySelector('video');
-    if (video && video.readyState >= 2) {
-      video.play().catch(e => {
-        console.log('Auto-play failed on slide change');
-      });
-    }
+    setTimeout(() => {
+      const currentSlide = this.slides[this.currentSlide];
+      const video = currentSlide.querySelector('video');
+      if (video && video.readyState >= 2) {
+        video.play().catch(e => {
+          console.log('Auto-play failed on slide change');
+        });
+      }
+    }, 300);
   }
   
   updateIndicators() {
-    const indicators = this.container.querySelectorAll('#carousel-indicators button');
-    indicators.forEach((indicator, index) => {
+    const indicators = this.container.parentNode.querySelector('.flex.justify-center');
+    if (!indicators) return;
+    
+    const indicatorButtons = indicators.querySelectorAll('button');
+    indicatorButtons.forEach((indicator, index) => {
       if (index === this.currentSlide) {
         indicator.classList.remove('bg-gray-300');
         indicator.classList.add('bg-indigo-600');
@@ -283,9 +388,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // Initialize mobile carousel for video section
-  const videoSection = document.querySelector('#video-carousel');
-  if (videoSection) {
-    new MobileVideoCarousel(videoSection);
-  }
+  // Initialize simple mobile carousel after videos are initialized
+  setTimeout(() => {
+    const videoSection = document.querySelector('#video-carousel');
+    if (videoSection) {
+      new SimpleMobileCarousel(videoSection);
+    }
+  }, 200);
 }); 
