@@ -72,6 +72,11 @@ class LazyVideo {
           loop="${this.options.loop}"
           muted="${this.options.muted}"
           playsinline="${this.options.playsInline}"
+          webkit-playsinline="true"
+          x5-playsinline="true"
+          x5-video-player-type="h5"
+          x5-video-player-fullscreen="false"
+          preload="metadata"
         >
           <source src="${this.options.webmSrc}" type="video/webm">
           <source src="${this.options.mp4Src}" type="video/mp4">
@@ -98,13 +103,32 @@ class LazyVideo {
       
       video.addEventListener('loadeddata', () => {
         this.isLoaded = true;
+        // Force play on mobile after data is loaded
+        if (this.isMobile()) {
+          video.play().catch(e => {
+            console.log('Mobile autoplay failed, will play on user interaction');
+          });
+        }
       });
       
       video.addEventListener('error', () => {
         this.hasError = true;
         this.renderPoster();
       });
+      
+      // Handle mobile touch to play
+      if (this.isMobile()) {
+        video.addEventListener('touchstart', () => {
+          video.play().catch(e => {
+            console.log('Touch play failed');
+          });
+        });
+      }
     }
+  }
+  
+  isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
   }
 }
 
@@ -133,8 +157,8 @@ class MobileVideoCarousel {
   setupCarousel() {
     // Add carousel wrapper
     this.container.innerHTML = `
-      <div class="relative overflow-hidden">
-        <div class="flex transition-transform duration-300 ease-out" id="carousel-slides">
+      <div class="relative overflow-hidden w-full">
+        <div class="flex transition-transform duration-300 ease-out w-full" id="carousel-slides">
           ${this.container.innerHTML}
         </div>
         <div class="flex justify-center mt-4 space-x-2" id="carousel-indicators">
@@ -149,7 +173,9 @@ class MobileVideoCarousel {
     this.slides = this.container.querySelectorAll('#carousel-slides > div');
     this.slides.forEach(slide => {
       slide.style.minWidth = '100%';
+      slide.style.width = '100%';
       slide.style.flexShrink = '0';
+      slide.style.flexGrow = '0';
     });
     
     // Add indicator click handlers
@@ -206,6 +232,15 @@ class MobileVideoCarousel {
     const slidesContainer = this.container.querySelector('#carousel-slides');
     slidesContainer.style.transform = `translateX(-${this.currentSlide * 100}%)`;
     this.updateIndicators();
+    
+    // Try to play video in current slide
+    const currentSlide = this.slides[this.currentSlide];
+    const video = currentSlide.querySelector('video');
+    if (video && video.readyState >= 2) {
+      video.play().catch(e => {
+        console.log('Auto-play failed on slide change');
+      });
+    }
   }
   
   updateIndicators() {
