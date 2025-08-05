@@ -153,6 +153,8 @@ class VideoCarousel {
     if (!video) {
       video = document.createElement('video');
       video.className = 'w-full h-full object-cover';
+      
+      // Essential attributes for autoplay and no controls
       video.setAttribute('muted', 'true');
       video.setAttribute('loop', 'true');
       video.setAttribute('playsinline', 'true');
@@ -163,6 +165,19 @@ class VideoCarousel {
       video.setAttribute('preload', 'metadata');
       video.setAttribute('controls', 'false');
       video.setAttribute('poster', videoData.poster);
+      
+      // iOS-specific attributes to prevent controls
+      video.setAttribute('webkit-playsinline', 'true');
+      video.setAttribute('playsinline', 'true');
+      video.setAttribute('x-webkit-airplay', 'allow');
+      video.setAttribute('x5-video-player-type', 'h5');
+      video.setAttribute('x5-video-player-fullscreen', 'false');
+      video.setAttribute('x5-video-orientation', 'portraint');
+      video.setAttribute('x5-video-ignore-metadata', 'true');
+      
+      // Disable all interactions that might show controls
+      video.setAttribute('disablePictureInPicture', 'true');
+      video.setAttribute('disableRemotePlayback', 'true');
       
       // Add sources
       const webmSource = document.createElement('source');
@@ -206,6 +221,59 @@ class VideoCarousel {
     
     video.addEventListener('error', (e) => {
       console.error('Video error:', e);
+    });
+    
+    // iOS-specific: Prevent any interactions that might show controls
+    video.addEventListener('webkitbeginfullscreen', (e) => {
+      e.preventDefault();
+      return false;
+    });
+    
+    video.addEventListener('webkitendfullscreen', (e) => {
+      e.preventDefault();
+      return false;
+    });
+    
+    video.addEventListener('webkitfullscreenchange', (e) => {
+      e.preventDefault();
+      return false;
+    });
+    
+    // Prevent context menu on video
+    video.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      return false;
+    });
+    
+    // Prevent any touch interactions that might show controls
+    video.addEventListener('touchstart', (e) => {
+      // Only allow our custom play attempt
+      this.attemptPlay(video);
+      e.preventDefault();
+      return false;
+    });
+    
+    video.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      return false;
+    });
+    
+    video.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      return false;
+    });
+    
+    // Prevent click events that might show controls
+    video.addEventListener('click', (e) => {
+      this.attemptPlay(video);
+      e.preventDefault();
+      return false;
+    });
+    
+    // Prevent double-tap to zoom
+    video.addEventListener('dblclick', (e) => {
+      e.preventDefault();
+      return false;
     });
     
     // Mobile-specific play attempts
