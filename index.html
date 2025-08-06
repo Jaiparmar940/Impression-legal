@@ -49,8 +49,28 @@
             }
         }
         
-        /* Video Controls Hiding */
+        /* Video Controls Hiding - Complete */
         video::-webkit-media-controls,
+        video::-webkit-media-controls-panel,
+        video::-webkit-media-controls-play-button,
+        video::-webkit-media-controls-start-playback-button,
+        video::-webkit-media-controls-timeline,
+        video::-webkit-media-controls-current-time-display,
+        video::-webkit-media-controls-time-remaining-display,
+        video::-webkit-media-controls-time-control,
+        video::-webkit-media-controls-mute-button,
+        video::-webkit-media-controls-toggle-closed-captions-button,
+        video::-webkit-media-controls-volume-slider,
+        video::-webkit-media-controls-volume-slider-container,
+        video::-webkit-media-controls-volume-slider-mute-button,
+        video::-webkit-media-controls-seek-back-button,
+        video::-webkit-media-controls-seek-forward-button,
+        video::-webkit-media-controls-rewind-button,
+        video::-webkit-media-controls-return-to-realtime-button,
+        video::-webkit-media-controls-fullscreen-button,
+        video::-webkit-media-controls-overlay-play-button,
+        video::-webkit-media-controls-overflow-button,
+        video::-webkit-media-controls-enclosure,
         video::-webkit-media-controls-panel,
         video::-webkit-media-controls-play-button,
         video::-webkit-media-controls-start-playback-button,
@@ -71,6 +91,9 @@
         video::-webkit-media-controls-overlay-play-button,
         video::-webkit-media-controls-overflow-button {
             display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
         }
         
         video::-moz-media-controls,
@@ -233,7 +256,7 @@
             visibility: hidden !important;
         }
         
-        /* Video Styling */
+        /* Video Styling - Complete */
         video {
             object-fit: cover;
             width: 100%;
@@ -248,6 +271,39 @@
             -webkit-tap-highlight-color: transparent;
             /* Prevent any iOS video interactions */
             pointer-events: none;
+            /* Additional iOS hiding */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+        
+        /* Force hide all video controls on all browsers */
+        video::-webkit-media-controls {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        
+        video::-moz-media-controls {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+        
+        /* Hide any remaining controls */
+        video::-webkit-media-controls-enclosure {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+            width: 0 !important;
+            height: 0 !important;
         }
         
         /* Allow pointer events only for our custom play button */
@@ -262,6 +318,21 @@
         
         .mobile-play-button:hover {
             opacity: 0.8;
+        }
+        
+        /* Mobile Carousel Styles */
+        @media (max-width: 767px) {
+            #video-carousel {
+                overflow: hidden;
+                position: relative;
+            }
+            
+            #video-carousel > div {
+                min-width: 100%;
+                width: 100%;
+                flex-shrink: 0;
+                flex-grow: 0;
+            }
         }
     </style>
     <script src="components/lazy-video.js"></script>

@@ -1,5 +1,5 @@
-// Video Carousel with Lazy Loading
-class VideoCarousel {
+// Simple Video Carousel - Mobile Only
+class SimpleVideoCarousel {
   constructor(container) {
     this.container = container;
     this.currentSlide = 0;
@@ -7,27 +7,69 @@ class VideoCarousel {
     this.isDragging = false;
     this.startX = 0;
     this.currentX = 0;
+    this.isMobile = this.checkMobile();
+    
+    // Video data in correct order: demo2, demo3, demo1
     this.videoData = [
-      { id: 'demo1', mp4: 'assets/animations/videos/demo1.mp4', webm: 'assets/animations/videos/demo1.webm', poster: 'assets/animations/posters/demo1-poster.jpg' },
-      { id: 'demo2', mp4: 'assets/animations/videos/demo2.mp4', webm: 'assets/animations/videos/demo2.webm', poster: 'assets/animations/posters/demo2-poster.jpg' },
-      { id: 'demo3', mp4: 'assets/animations/videos/demo3.mp4', webm: 'assets/animations/videos/demo3.webm', poster: 'assets/animations/posters/demo3-poster.jpg' }
+      { 
+        id: 'demo2', 
+        mp4: 'assets/animations/videos/demo2.mp4', 
+        webm: 'assets/animations/videos/demo2.webm', 
+        poster: 'assets/animations/posters/demo2-poster.jpg',
+        title: 'Easy Profile Upload',
+        description: 'Upload your photos and prompts in seconds'
+      },
+      { 
+        id: 'demo3', 
+        mp4: 'assets/animations/videos/demo3.mp4', 
+        webm: 'assets/animations/videos/demo3.webm', 
+        poster: 'assets/animations/posters/demo3-poster.jpg',
+        title: 'Smart Review System',
+        description: 'Rate profiles with detailed feedback'
+      },
+      { 
+        id: 'demo1', 
+        mp4: 'assets/animations/videos/demo1.mp4', 
+        webm: 'assets/animations/videos/demo1.webm', 
+        poster: 'assets/animations/posters/demo1-poster.jpg',
+        title: 'Detailed Results',
+        description: 'Get comprehensive feedback and AI suggestions'
+      }
     ];
     
     this.init();
   }
   
-  init() {
-    this.setupCarousel();
-    this.setupTouchEvents();
-    this.updateIndicators();
-    this.loadCurrentSlide();
+  checkMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
   }
   
-  setupCarousel() {
-    // Get the video cards
-    this.slides = this.container.querySelectorAll('div[class*="bg-white"]');
+  init() {
+    if (this.isMobile) {
+      this.setupMobileCarousel();
+      this.setupTouchEvents();
+      this.updateIndicators();
+      this.loadCurrentSlide();
+    } else {
+      this.setupDesktopLayout();
+    }
+  }
+  
+  setupDesktopLayout() {
+    // Get all video containers
+    const videoContainers = this.container.querySelectorAll('[data-lazy-video]');
     
-    // Add indicators after the container
+    // Load all videos for desktop
+    videoContainers.forEach((container, index) => {
+      this.loadVideo(container, this.videoData[index]);
+    });
+  }
+  
+  setupMobileCarousel() {
+    // Get the video cards
+    this.slides = Array.from(this.container.querySelectorAll('div[class*="bg-white"]'));
+    
+    // Create indicators
     const indicators = document.createElement('div');
     indicators.className = 'flex justify-center mt-4 space-x-2';
     indicators.innerHTML = `
@@ -38,10 +80,11 @@ class VideoCarousel {
     
     this.container.parentNode.insertBefore(indicators, this.container.nextSibling);
     
-    // Make container overflow hidden
+    // Setup container for mobile
     this.container.style.overflow = 'hidden';
+    this.container.style.position = 'relative';
     
-    // Make slides full width and hide non-active ones
+    // Setup slides for mobile
     this.slides.forEach((slide, index) => {
       slide.style.minWidth = '100%';
       slide.style.width = '100%';
@@ -63,6 +106,8 @@ class VideoCarousel {
   }
   
   setupTouchEvents() {
+    if (!this.isMobile) return;
+    
     this.container.addEventListener('touchstart', (e) => {
       this.isDragging = true;
       this.startX = e.touches[0].clientX;
@@ -113,6 +158,8 @@ class VideoCarousel {
   }
   
   goToSlide(index) {
+    if (!this.isMobile) return;
+    
     // Pause current slide video
     this.pauseCurrentSlide();
     
@@ -132,6 +179,8 @@ class VideoCarousel {
   }
   
   pauseCurrentSlide() {
+    if (!this.isMobile) return;
+    
     const currentSlide = this.slides[this.currentSlide];
     const video = currentSlide.querySelector('video');
     if (video) {
@@ -140,70 +189,64 @@ class VideoCarousel {
   }
   
   loadCurrentSlide() {
+    if (!this.isMobile) return;
+    
     const currentSlide = this.slides[this.currentSlide];
     const videoContainer = currentSlide.querySelector('[data-lazy-video]');
     
     if (!videoContainer) return;
     
-    // Get video data for current slide
     const videoData = this.videoData[this.currentSlide];
+    this.loadVideo(videoContainer, videoData);
+  }
+  
+  loadVideo(container, videoData) {
+    // Create video element
+    const video = document.createElement('video');
+    video.className = 'w-full h-full object-cover';
     
-    // Create video element if it doesn't exist
-    let video = videoContainer.querySelector('video');
-    if (!video) {
-      video = document.createElement('video');
-      video.className = 'w-full h-full object-cover';
-      
-      // Essential attributes for autoplay and no controls
-      video.setAttribute('muted', 'true');
-      video.setAttribute('loop', 'true');
-      video.setAttribute('playsinline', 'true');
-      video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('x5-playsinline', 'true');
-      video.setAttribute('x5-video-player-type', 'h5');
-      video.setAttribute('x5-video-player-fullscreen', 'false');
-      video.setAttribute('preload', 'metadata');
-      video.setAttribute('controls', 'false');
-      video.setAttribute('poster', videoData.poster);
-      
-      // iOS-specific attributes to prevent controls
-      video.setAttribute('webkit-playsinline', 'true');
-      video.setAttribute('playsinline', 'true');
-      video.setAttribute('x-webkit-airplay', 'allow');
-      video.setAttribute('x5-video-player-type', 'h5');
-      video.setAttribute('x5-video-player-fullscreen', 'false');
-      video.setAttribute('x5-video-orientation', 'portraint');
-      video.setAttribute('x5-video-ignore-metadata', 'true');
-      
-      // Disable all interactions that might show controls
-      video.setAttribute('disablePictureInPicture', 'true');
-      video.setAttribute('disableRemotePlayback', 'true');
-      
-      // Add sources
-      const webmSource = document.createElement('source');
-      webmSource.src = videoData.webm;
-      webmSource.type = 'video/webm';
-      video.appendChild(webmSource);
-      
-      const mp4Source = document.createElement('source');
-      mp4Source.src = videoData.mp4;
-      mp4Source.type = 'video/mp4';
-      video.appendChild(mp4Source);
-      
-      // Add fallback image
-      const fallbackImg = document.createElement('img');
-      fallbackImg.src = videoData.poster;
-      fallbackImg.alt = 'Video poster';
-      fallbackImg.className = 'w-full h-full object-cover';
-      video.appendChild(fallbackImg);
-      
-      // Add video to container
-      videoContainer.innerHTML = '';
-      videoContainer.appendChild(video);
-      
-      // Setup video events
-      this.setupVideoEvents(video);
-    }
+    // Essential attributes for autoplay and no controls
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = 'metadata';
+    video.poster = videoData.poster;
+    
+    // iOS-specific attributes
+    video.setAttribute('webkit-playsinline', 'true');
+    video.setAttribute('x5-playsinline', 'true');
+    video.setAttribute('x5-video-player-type', 'h5');
+    video.setAttribute('x5-video-player-fullscreen', 'false');
+    video.setAttribute('x-webkit-airplay', 'allow');
+    video.setAttribute('x5-video-orientation', 'portraint');
+    video.setAttribute('x5-video-ignore-metadata', 'true');
+    video.setAttribute('disablePictureInPicture', 'true');
+    video.setAttribute('disableRemotePlayback', 'true');
+    
+    // Add sources
+    const webmSource = document.createElement('source');
+    webmSource.src = videoData.webm;
+    webmSource.type = 'video/webm';
+    video.appendChild(webmSource);
+    
+    const mp4Source = document.createElement('source');
+    mp4Source.src = videoData.mp4;
+    mp4Source.type = 'video/mp4';
+    video.appendChild(mp4Source);
+    
+    // Add fallback image
+    const fallbackImg = document.createElement('img');
+    fallbackImg.src = videoData.poster;
+    fallbackImg.alt = 'Video poster';
+    fallbackImg.className = 'w-full h-full object-cover';
+    video.appendChild(fallbackImg);
+    
+    // Clear container and add video
+    container.innerHTML = '';
+    container.appendChild(video);
+    
+    // Setup video events
+    this.setupVideoEvents(video);
     
     // Load and play video
     video.load();
@@ -211,6 +254,7 @@ class VideoCarousel {
   }
   
   setupVideoEvents(video) {
+    // Basic video events
     video.addEventListener('loadeddata', () => {
       console.log('Video loaded successfully');
     });
@@ -223,69 +267,38 @@ class VideoCarousel {
       console.error('Video error:', e);
     });
     
-    // iOS-specific: Prevent any interactions that might show controls
-    video.addEventListener('webkitbeginfullscreen', (e) => {
-      e.preventDefault();
-      return false;
-    });
+    // Prevent all interactions that might show controls
+    const preventEvents = [
+      'webkitbeginfullscreen',
+      'webkitendfullscreen', 
+      'webkitfullscreenchange',
+      'contextmenu',
+      'touchstart',
+      'touchend',
+      'touchmove',
+      'click',
+      'dblclick',
+      'mousedown',
+      'mouseup',
+      'mousemove'
+    ];
     
-    video.addEventListener('webkitendfullscreen', (e) => {
-      e.preventDefault();
-      return false;
-    });
-    
-    video.addEventListener('webkitfullscreenchange', (e) => {
-      e.preventDefault();
-      return false;
-    });
-    
-    // Prevent context menu on video
-    video.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      return false;
-    });
-    
-    // Prevent any touch interactions that might show controls
-    video.addEventListener('touchstart', (e) => {
-      // Only allow our custom play attempt
-      this.attemptPlay(video);
-      e.preventDefault();
-      return false;
-    });
-    
-    video.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      return false;
-    });
-    
-    video.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      return false;
-    });
-    
-    // Prevent click events that might show controls
-    video.addEventListener('click', (e) => {
-      this.attemptPlay(video);
-      e.preventDefault();
-      return false;
-    });
-    
-    // Prevent double-tap to zoom
-    video.addEventListener('dblclick', (e) => {
-      e.preventDefault();
-      return false;
-    });
-    
-    // Mobile-specific play attempts
-    if (this.isMobile()) {
-      video.addEventListener('touchstart', () => {
-        this.attemptPlay(video);
+    preventEvents.forEach(eventType => {
+      video.addEventListener(eventType, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
       });
-      
-      video.addEventListener('click', () => {
-        this.attemptPlay(video);
-      });
-    }
+    });
+    
+    // Allow play attempts on touch/click but prevent default behavior
+    video.addEventListener('touchstart', () => {
+      this.attemptPlay(video);
+    });
+    
+    video.addEventListener('click', () => {
+      this.attemptPlay(video);
+    });
   }
   
   attemptPlay(video) {
@@ -298,8 +311,7 @@ class VideoCarousel {
         })
         .catch(error => {
           console.log('Autoplay failed:', error.message);
-          // Add play button for mobile if autoplay fails
-          if (this.isMobile()) {
+          if (this.isMobile) {
             this.addPlayButton(video);
           }
         });
@@ -332,6 +344,8 @@ class VideoCarousel {
   }
   
   updateIndicators() {
+    if (!this.isMobile) return;
+    
     const indicators = this.container.parentNode.querySelector('.flex.justify-center');
     if (!indicators) return;
     
@@ -346,16 +360,12 @@ class VideoCarousel {
       }
     });
   }
-  
-  isMobile() {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
-  }
 }
 
-// Auto-initialize carousel when DOM is loaded
+// Initialize carousel when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
   const videoSection = document.querySelector('#video-carousel');
   if (videoSection) {
-    new VideoCarousel(videoSection);
+    new SimpleVideoCarousel(videoSection);
   }
 }); 
