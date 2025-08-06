@@ -149,16 +149,28 @@ class SimpleVideoCarousel {
       const diff = this.currentX - this.startX;
       const threshold = 50;
       
+      // Only change slides if swipe distance exceeds threshold
       if (Math.abs(diff) > threshold) {
+        // Deliberate swipe: change slides and load new video
         if (diff > 0 && this.currentSlide > 0) {
           this.goToSlide(this.currentSlide - 1);
         } else if (diff < 0 && this.currentSlide < this.slides.length - 1) {
           this.goToSlide(this.currentSlide + 1);
-        } else {
-          this.goToSlide(this.currentSlide);
         }
       } else {
-        this.goToSlide(this.currentSlide);
+        // Small drag/scroll: just reset transforms and keep current video playing
+        this.resetSlideTransforms();
+      }
+    });
+  }
+  
+  // New helper method to reset slide transforms without reloading video
+  resetSlideTransforms() {
+    // Reset all slide transforms and hide non-active slides
+    this.slides.forEach((slide, index) => {
+      slide.style.transform = '';
+      if (index !== this.currentSlide) {
+        slide.style.display = 'none';
       }
     });
   }
@@ -166,22 +178,25 @@ class SimpleVideoCarousel {
   goToSlide(index) {
     if (!this.isMobile) return;
     
-    // Pause current slide video
-    this.pauseCurrentSlide();
-    
-    this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
-    
-    // Hide all slides
-    this.slides.forEach(slide => {
-      slide.style.display = 'none';
-      slide.style.transform = '';
-    });
-    
-    // Show current slide
-    this.slides[this.currentSlide].style.display = 'block';
-    
-    this.updateIndicators();
-    this.loadCurrentSlide();
+    // Only pause/reload if we're actually changing slides
+    if (index !== this.currentSlide) {
+      // Pause current slide video only when changing slides
+      this.pauseCurrentSlide();
+      
+      this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+      
+      // Hide all slides
+      this.slides.forEach(slide => {
+        slide.style.display = 'none';
+        slide.style.transform = '';
+      });
+      
+      // Show current slide
+      this.slides[this.currentSlide].style.display = 'block';
+      
+      this.updateIndicators();
+      this.loadCurrentSlide();
+    }
   }
   
   pauseCurrentSlide() {
