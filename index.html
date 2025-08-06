@@ -333,6 +333,17 @@
                 flex-shrink: 0;
                 flex-grow: 0;
             }
+            
+            /* Mobile video container height adjustment */
+            #video-carousel .aspect-\[9\/16\] {
+                aspect-ratio: 9/12 !important; /* Shorter height ratio */
+            }
+            
+            /* Alternative: Use a fixed height for mobile */
+            #video-carousel .aspect-\[9\/16\] {
+                height: 60vh !important;
+                aspect-ratio: auto !important;
+            }
         }
     </style>
     <script src="components/lazy-video.js"></script>

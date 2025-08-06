@@ -73,7 +73,7 @@ class SimpleVideoCarousel {
     const indicators = document.createElement('div');
     indicators.className = 'flex justify-center mt-4 space-x-2';
     indicators.innerHTML = `
-      <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="0"></button>
+      <button class="w-2 h-2 rounded-full bg-indigo-600 transition-colors" data-slide="0"></button>
       <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="1"></button>
       <button class="w-2 h-2 rounded-full bg-gray-300 transition-colors" data-slide="2"></button>
     `;
@@ -369,10 +369,19 @@ class SimpleVideoCarousel {
   updateIndicators() {
     if (!this.isMobile) return;
     
-    const indicators = this.container.parentNode.querySelector('.flex.justify-center');
-    if (!indicators) return;
+    // Find indicators by looking for the specific class combination
+    const indicators = this.container.parentNode.querySelector('.flex.justify-center.mt-4.space-x-2');
+    if (!indicators) {
+      console.log('Indicators not found');
+      return;
+    }
     
     const indicatorButtons = indicators.querySelectorAll('button');
+    if (indicatorButtons.length === 0) {
+      console.log('No indicator buttons found');
+      return;
+    }
+    
     indicatorButtons.forEach((indicator, index) => {
       if (index === this.currentSlide) {
         indicator.classList.remove('bg-gray-300');
@@ -382,6 +391,8 @@ class SimpleVideoCarousel {
         indicator.classList.add('bg-gray-300');
       }
     });
+    
+    console.log(`Updated indicators: currentSlide = ${this.currentSlide}`);
   }
 }
 
