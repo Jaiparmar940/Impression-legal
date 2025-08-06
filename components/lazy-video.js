@@ -109,6 +109,8 @@ class SimpleVideoCarousel {
     if (!this.isMobile) return;
     
     this.container.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       this.isDragging = true;
       this.startX = e.touches[0].clientX;
       this.currentX = this.startX;
@@ -117,6 +119,8 @@ class SimpleVideoCarousel {
     this.container.addEventListener('touchmove', (e) => {
       if (!this.isDragging) return;
       
+      e.preventDefault();
+      e.stopPropagation();
       this.currentX = e.touches[0].clientX;
       const diff = this.currentX - this.startX;
       
@@ -136,9 +140,11 @@ class SimpleVideoCarousel {
       }
     });
     
-    this.container.addEventListener('touchend', () => {
+    this.container.addEventListener('touchend', (e) => {
       if (!this.isDragging) return;
       
+      e.preventDefault();
+      e.stopPropagation();
       this.isDragging = false;
       const diff = this.currentX - this.startX;
       const threshold = 50;
@@ -289,19 +295,6 @@ class SimpleVideoCarousel {
         e.stopPropagation();
         return false;
       });
-    });
-    
-    // Only attempt play if video is paused and user interacts
-    video.addEventListener('touchstart', () => {
-      if (video.paused) {
-        this.attemptPlay(video);
-      }
-    });
-    
-    video.addEventListener('click', () => {
-      if (video.paused) {
-        this.attemptPlay(video);
-      }
     });
   }
   
