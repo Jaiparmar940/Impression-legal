@@ -291,17 +291,26 @@ class SimpleVideoCarousel {
       });
     });
     
-    // Allow play attempts on touch/click but prevent default behavior
+    // Only attempt play if video is paused and user interacts
     video.addEventListener('touchstart', () => {
-      this.attemptPlay(video);
+      if (video.paused) {
+        this.attemptPlay(video);
+      }
     });
     
     video.addEventListener('click', () => {
-      this.attemptPlay(video);
+      if (video.paused) {
+        this.attemptPlay(video);
+      }
     });
   }
   
   attemptPlay(video) {
+    // Don't attempt to play if video is already playing
+    if (!video.paused) {
+      return;
+    }
+    
     const playPromise = video.play();
     
     if (playPromise !== undefined) {
