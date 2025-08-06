@@ -108,24 +108,26 @@ class SimpleVideoCarousel {
   setupTouchEvents() {
     if (!this.isMobile) return;
     
+    // Only handle touch events on the container, not on video elements
     this.container.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+      // Don't prevent default on touchstart to allow natural scrolling
       this.isDragging = true;
       this.startX = e.touches[0].clientX;
       this.currentX = this.startX;
-    });
+    }, { passive: true });
     
     this.container.addEventListener('touchmove', (e) => {
       if (!this.isDragging) return;
       
-      e.preventDefault();
-      e.stopPropagation();
       this.currentX = e.touches[0].clientX;
       const diff = this.currentX - this.startX;
       
-      // Visual feedback during drag
+      // Only prevent default if we're actually dragging (significant movement)
       if (Math.abs(diff) > 10) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Visual feedback during drag
         const currentSlide = this.slides[this.currentSlide];
         const nextSlide = this.slides[this.currentSlide + 1];
         const prevSlide = this.slides[this.currentSlide - 1];
@@ -143,8 +145,6 @@ class SimpleVideoCarousel {
     this.container.addEventListener('touchend', (e) => {
       if (!this.isDragging) return;
       
-      e.preventDefault();
-      e.stopPropagation();
       this.isDragging = false;
       const diff = this.currentX - this.startX;
       const threshold = 50;
@@ -273,20 +273,13 @@ class SimpleVideoCarousel {
       console.error('Video error:', e);
     });
     
-    // Prevent all interactions that might show controls
+    // Only prevent events that might show controls, but allow natural touch behavior
     const preventEvents = [
       'webkitbeginfullscreen',
       'webkitendfullscreen', 
       'webkitfullscreenchange',
       'contextmenu',
-      'touchstart',
-      'touchend',
-      'touchmove',
-      'click',
-      'dblclick',
-      'mousedown',
-      'mouseup',
-      'mousemove'
+      'dblclick'
     ];
     
     preventEvents.forEach(eventType => {
@@ -296,6 +289,19 @@ class SimpleVideoCarousel {
         return false;
       });
     });
+    
+    // Allow touch events to pass through to carousel
+    video.addEventListener('touchstart', (e) => {
+      // Don't prevent default - let carousel handle it
+    }, { passive: true });
+    
+    video.addEventListener('touchmove', (e) => {
+      // Don't prevent default - let carousel handle it
+    }, { passive: true });
+    
+    video.addEventListener('touchend', (e) => {
+      // Don't prevent default - let carousel handle it
+    }, { passive: true });
   }
   
   attemptPlay(video) {
